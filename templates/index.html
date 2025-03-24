@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>English learning assistant</title>
+    <link rel="shortcut icon" href="/static/images/favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --border-color: #ddd;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --light-text: #666;
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease-in-out;
+        }
+    
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+    
+        .app-container {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            transition: var(--transition);
+            position: relative;
+        }
+    
+        .app-container.collapsed {
+            grid-template-columns: 0 1fr;
+        }
+    
+        /* Header styling */
+        .header {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            display: flex;
+            justify-content: Center; /* Center the heading */
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: var(--box-shadow);
+            z-index: 5;
+            position: relative; /* Add position relative */
+            gap: 16px; /* Добавляем пробел между всеми элементами */
+        }
+    
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        /* User info positioned absolutely to the right */
+        .user-info {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+    
+        /* Settings panel */
+        .settings-panel {
+            grid-column: 1;
+            grid-row: 2;
+            background-color: white;
+            border-radius: 0 0 0 8px;
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            overflow-y: auto;
+        }
+    
+        .app-container.collapsed .settings-panel {
+            opacity: 0;
+            pointer-events: none;
+        }
+    
+        /* Main content area */
+        .main-content {
+            grid-column: 2;
+            grid-row: 2;
+            transition: var(--transition);
+            padding: 20px;
+            overflow-y: auto;
+        }
+    
+        .app-container.collapsed .main-content {
+            grid-column: 1 / -1;
+        }
+    
+        /* Common component styles */
+        .content-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+    
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+    
+        .settings-group {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+        }
+    
+        /* Form element styles */
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--light-text);
+        }
+    
+        label[for="nativeLanguage"],
+        label[for="difficulty"],
+        label[for="Type"],
+        label[for="Explanations"] {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+    
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background-color: white;
+            transition: border-color 0.3s;
+        }
+    
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+    
+        select:focus, input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+    
+        /* Button styles */
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+    
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+    
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+    
+        /* Checkbox and radio styles */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+    
+        .checkbox-container input[type="checkbox"],
+        .checkbox-container input[type="radio"] {
+            margin-right: 8px;
+        }
+    
+        /* Toggle button - completely separated from header */
+        #toggleSettings {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        #toggleSettings img {
+            width: 30px;
+            height: 30px;
+            display: block;
+        }
+        
+        /* User info styles */
+        .logout-btn {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
+    
+        /* Speech controls */
+        .speech-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+        }
+    
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            text-align: center;
+            font-style: italic;
+        }
+    
+        .start-button {
+            background-color: var(--success-color);
+        }
+    
+        .start-button:hover {
+            background-color: #45a049;
+        }
+    
+        .stop-button {
+            background-color: var(--danger-color);
+        }
+    
+        .stop-button:hover {
+            background-color: #d32f2f;
+        }
+    
+        #toggleBtn img {
+            width: 30px;
+            height: 30px;
+            display: block;
+        }
+    
+        /* Loading indicator */
+        .loading {
+            display: none;
+            align-items: center;
+            color: var(--primary-color);
+        }
+    
+        /* Footer */
+        .footer {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            text-align: center;
+            padding: 15px 0;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--light-text);
+            background-color: white;
+            border-radius: 0 0 8px 8px;
+        }
+    
+        /* Simplified flex utilities */
+        .flex {
+            display: flex;
+        }
+    
+        .flex-column {
+            flex-direction: column;
+        }
+    
+        .gap-4 {
+            gap: 1rem;
+        }
+    
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto;
+            }
+    
+            .app-container.collapsed {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 0 1fr auto;
+            }
+    
+            .settings-panel {
+                grid-column: 1;
+                grid-row: 2;
+                border-radius: 0;
+            }
+    
+            .main-content {
+                grid-column: 1;
+                grid-row: 3;
+                padding: 15px;
+            }
+    
+            .footer {
+                grid-row: 4;
+            }
+    
+            .header h1 {
+                font-size: 1.4rem;
+                margin-left: 30px; /* Add space for toggle button on mobile */
+            }
+            
+            .user-info {
+                right: 10px;
+            }
+            
+            #username {
+                display: none; /* Hide username on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <button id="toggleSettings">
+            <img src="/static/images/settings-icon.png" alt="Settings">
+        </button>
+
+        <header class="header">
+            <h1>English learning assistant</h1>
+            <div class="user-info">
+                <span id="username">Welcome, {{ username }}</span>
+                <a href="/logout" class="logout-btn">Logout</a>
+            </div>
+        </header>
+
+        <div class="settings-panel">
+            <div class="settings-group">
+                <label for="nativeLanguage">Native Language:</label>
+                <select id="nativeLanguage">
+                    <option value="Russian">Russian (Русский)</option>
+                    <option value="Ukrainian">Ukrainian (Українська)</option>
+                    <option value="French">French (Français)</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
+                <label for="difficulty">Difficulty Level:</label>
+                <select id="difficulty">
+                    <option value="1">1 - Beginner</option>
+                    <option value="4">2 - Elementary</option>
+                    <option value="6">3 - Intermediate</option>
+                    <option value="8">4 - Advanced</option>
+                    <option value="10">5 - Proficient</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
+                <label for="Type">Interaction Type:</label>
+                <div class="flex flex-column gap-4">
+                    <label class="checkbox-container">
+                        <input type="radio" name="interactionType" value="translation" checked>
+                        Translation
+                    </label>
+                    <label class="checkbox-container">
+                        <input type="radio" name="interactionType" value="question">
+                        Questions & Answers
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label for="Explanations">Explanations:</label>
+                <div class="flex flex-column gap-4">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="explanations" value="grammar">
+                        Grammar
+                    </label>
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="explanations" value="pronunciation">
+                        Pronunciation
+                    </label>
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="explanations" value="alternatives">
+                        Alternative Translations
+                    </label>
+                </div>
+            </div>
+            <button id="saveSettings" class="button primary">Save Settings</button>
+        </div>
+
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-title">Assistant Response</div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="enableSpeech" name="enableSpeech">
+                    <label for="enableSpeech">Voice the received text</label>
+                </div>
+                <textarea id="textOutput" placeholder="The received text will be displayed here..."></textarea>
+                <div class="button-group">
+                    <button id="submitBtn">Let's start</button>
+                    <div id="loading" class="loading">Processing...</div>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <div class="section-title">User Input</div>
+                <textarea id="transcript" placeholder="The recognized text will appear here..."></textarea>
+                <div class="speech-controls">
+                    <button id="toggleBtn" class="start-button">
+                        <img id="toggleIcon" src="/static/images/free-icon-voice-recognition.png" alt="Start" />
+                    </button>
+                    <div id="status" class="status">Ready to record</div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            English learning assistant © 2025
+        </footer>
+    </div>
+    <script>
+        const toggleSettingsBtn = document.getElementById('toggleSettings');
+        const appContainer = document.querySelector('.app-container');
+
+        toggleSettingsBtn.addEventListener('click', () => {
+            appContainer.classList.toggle('collapsed');
+        });
+
+        let socket;
+        let isRecording = false;
+        const toggleBtn = document.getElementById('toggleBtn');
+        const transcript = document.getElementById('transcript');
+        const status = document.getElementById('status');
+        let finalText = "";
+        
+        toggleBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        function startRecording() {
+            if (socket) {
+                socket.close();
+            }
+            transcript.value=''
+            finalText = '';
+            socket = new WebSocket(`ws://${window.location.host}/ws/recognize`);
+            
+            socket.onopen = function(e) {
+                isRecording = true;
+                //toggleBtn.textContent = 'Стоп';
+                document.getElementById("toggleIcon").src = "/static/images/free-icon-stop.png"
+                toggleBtn.style.backgroundColor = '#f44336';
+                status.textContent = 'Recognition in progress...';
+            };
+            
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'final') {
+                    finalText += (finalText ? ' ' : '') + data.text;
+                    transcript.value = finalText;
+                    status.textContent = '✓ ' + data.text;
+                } else if (data.type === 'partial') {
+                    transcript.value = finalText + (finalText ? ' ' : '') + data.text;
+                    status.textContent = '... ' + data.text;
+                } else if (data.type === 'error') {
+                    status.textContent = data.text;
+                }
+            };
+            
+            socket.onclose = function(event) {
+                if (isRecording) {
+                    isRecording = false;
+                    //toggleBtn.textContent = 'Старт';
+                    document.getElementById("toggleIcon").src = "/static/images/free-icon-voice-recognition.png"
+                    toggleBtn.style.backgroundColor = '#4CAF50';
+                    status.textContent = 'Recognition stopped';
+                }
+                // Отправка запроса к эндпоинту
+                const text = document.getElementById('transcript').value.trim();
+                const difficulty = document.getElementById('difficulty').value;
+                const nativeLanguage = document.getElementById('nativeLanguage').value;
+                const interactionType = document.querySelector('input[name="interactionType"]:checked').value;
+                const explanationElements = document.querySelectorAll('input[name="explanations"]:checked');
+                const explanations = Array.from(explanationElements).map(el => el.value);
+
+                const formData = new FormData();
+                formData.append('text', text);
+                formData.append('native_lang', nativeLanguage);
+                for (const exp of explanations) {
+                    formData.append('explanations', exp);
+                }
+                const loadingIndicator = document.getElementById('loading');
+                loadingIndicator.style.display = 'block'; // Показать индикатор
+                toggleBtn.disabled = true
+                fetch("/get_anal",{
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const textOutput = document.getElementById('textOutput');
+                    if (textOutput) {
+                        textOutput.value = data.text.trim(); 
+                    }
+                })
+                .finally(() => {
+                    loadingIndicator.style.display = 'none'; 
+                    toggleBtn.disabled = false
+                })
+                .catch(error => console.error("Ошибка запроса:", error));
+                
+            };
+
+
+            socket.onerror = function(error) {
+                console.error(`WebSocket error: ${error}`);
+                status.textContent = 'Connection error';
+                //toggleBtn.textContent = 'Старт';
+                document.getElementById("toggleIcon").src = "/static/images/free-icon-voice-recognition.png"
+                toggleBtn.style.backgroundColor = '#4CAF50';
+                isRecording = false;
+            };
+        }
+
+        function stopRecording() {
+            if (socket) {
+                socket.send(JSON.stringify({action: 'stop'}));
+                socket.close();
+                isRecording = false;
+                //toggleBtn.textContent = 'Старт';
+                document.getElementById("toggleIcon").src = "/static/images/free-icon-voice-recognition.png"
+                toggleBtn.style.backgroundColor = '#4CAF50';
+                status.textContent = 'Recognition stopped';
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.close();
+            }
+        });
+
+
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            // Get values from form
+            const difficulty = document.getElementById('difficulty').value;
+            const nativeLanguage = document.getElementById('nativeLanguage').value;
+            const interactionType = document.querySelector('input[name="interactionType"]:checked').value;
+            const explanationElements = document.querySelectorAll('input[name="explanations"]:checked');
+            const explanations = Array.from(explanationElements).map(el => el.value);
+            const text = document.getElementById('transcript').value.trim();
+            const loading = document.getElementById('loading');
+            const textOutput = document.getElementById('textOutput');
+            const enableSpeech = document.getElementById('enableSpeech').checked;
+            
+            this.textContent = "Next task";
+            // Show loading indicator
+            loading.style.display = 'flex';
+            this.disabled = true;
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('difficulty', difficulty);
+            formData.append('native_lang', nativeLanguage);
+            formData.append('interaction_type', interactionType);
+            
+            try {
+                // Send request to backend
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                textOutput.value = data.response;
+                
+                // Speak response if checkbox is checked
+                if (enableSpeech) {
+                    try {
+                        await fetch('/speak_text', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ text: data.response }),
+                        });
+                        status.textContent = 'The answer has been announced!';
+                    } catch (error) {
+                        status.textContent = `Voice acting error: ${error.message}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                textOutput.value = "Error processing your request. Please try again.";
+            } finally {
+                // Hide loading indicator
+                loading.style.display = 'none';
+                this.disabled = false;
+            }
+        });
+     //////new
+            // Добавьте в начало файла с JavaScript кодом
+        function getToken() {
+            // Получаем токен из cookies
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'access_token') {
+                    return value.replace('Bearer ', '');
+                }
+            }
+            return null;
+        }
+
+        
+
+        // Модифицируем функцию для сохранения настроек
+        function saveSettings() {
+            const nativeLanguage = document.getElementById('nativeLanguage').value;
+            const difficulty = parseInt(document.getElementById('difficulty').value);
+            const interactionType = document.querySelector('input[name="interaction"]:checked').value;
+            
+            // Собираем выбранные объяснения
+            const explanationCheckboxes = document.querySelectorAll('input[name="explanation"]:checked');
+            const explanations = Array.from(explanationCheckboxes).map(checkbox => checkbox.value);
+            
+            // Сохраняем настройки на сервере
+            fetch('/save_settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nativeLanguage,
+                    difficulty,
+                    interactionType,
+                    explanations
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Настройки сохранены
+                    console.log('Settings saved successfully');
+                } else {
+                    showError('Ошибка при сохранении настроек: ' + data.message);
+                }
+            })
+            .catch(error => {
+                showError('Ошибка при сохранении настроек: ' + error);
+            });
+        }
+
+        // Функция для загрузки настроек пользователя при загрузке страницы
+        function loadUserSettings() {
+            fetch('/get_settings')
+                .then(response => response.json())
+                .then(data => {
+                    const settings = data.settings;
+                    if (!settings || Object.keys(settings).length === 0) {
+                        return;
+                    }
+                    
+                    // Применяем настройки к форме
+                    if (settings.nativeLanguage) {
+                        document.getElementById('nativeLanguage').value = settings.nativeLanguage;
+                    }
+                    
+                    if (settings.difficulty !== undefined) {
+                        document.getElementById('difficulty').value = settings.difficulty;
+                    }
+                    
+                    if (settings.interactionType) {
+                        const radioBtn = document.querySelector(`input[name="interaction"][value="${settings.interactionType}"]`);
+                        if (radioBtn) {
+                            radioBtn.checked = true;
+                        }
+                    }
+                    
+                    if (settings.explanations && settings.explanations.length > 0) {
+                        settings.explanations.forEach(exp => {
+                            const checkbox = document.querySelector(`input[name="explanation"][value="${exp}"]`);
+                            if (checkbox) {
+                                checkbox.checked = true;
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading user settings:', error);
+                });
+        }
+
+        // Вызываем загрузку настроек при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserSettings();
+            
+            // Добавляем обработчик для кнопки сохранения настроек
+            const saveSettingsBtn = document.getElementById('saveSettings');
+            if (saveSettingsBtn) {
+                saveSettingsBtn.addEventListener('click', saveSettings);
+            }
+        });   
+        ////////////////////////
+        // Проверка токена при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserSettings();
+        });
+    
+    </script>
+</body>
+</html>
