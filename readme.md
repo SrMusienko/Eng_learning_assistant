@@ -71,7 +71,7 @@ This project is an English learning assistant that provides interactive tools to
     -   Open your web browser and navigate to `http://0.0.0.0:8000`.
 
 ## Project Structure
-
+'''
 english-learning-assistant/
 ├── main.py             # Main FastAPI application
 ├── services.py         # Backend services (speech recognition, TTS, etc.)
@@ -90,7 +90,7 @@ english-learning-assistant/
 ├── requirements.txt    # Project dependencies
 ├── logger_config.py    # Logger configuration
 └── README.md           # Project documentation
-
+'''
 ## Usage
 
 1.  **Register or log in:**
